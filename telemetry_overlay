@@ -1,0 +1,60 @@
+"""
+Telemetry Overlay — Project 3
+Compares exactly where on track one driver gained or lost time versus
+another, using their fastest laps (speed, throttle, brake).
+"""
+
+import fastf1
+import matplotlib.pyplot as plt
+
+fastf1.Cache.enable_cache('cache')
+
+# --- 1. Load the race ---
+session = fastf1.get_session(2021, 'Brazil', 'R')
+session.load()
+
+# --- 2. Pick two drivers to compare ---
+driver_1 = 'VER'
+driver_2 = 'HAM'
+
+color_1 = 'blue'
+color_2 = 'red'
+
+laps = session.laps
+
+# --- 3. Get each driver's single fastest lap of the session ---
+fastest_lap_1 = laps.pick_drivers(driver_1).pick_fastest()
+fastest_lap_2 = laps.pick_drivers(driver_2).pick_fastest()
+
+# --- 4. Pull the detailed telemetry (speed/throttle/brake) for those laps ---
+# add_distance() converts time-based data into distance-around-the-lap,
+# so both drivers' data lines up on the same x-axis regardless of pace.
+telemetry_1 = fastest_lap_1.get_car_data().add_distance()
+telemetry_2 = fastest_lap_2.get_car_data().add_distance()
+
+# --- 5. Plot speed, throttle and brake stacked on top of each other ---
+fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
+
+axes[0].plot(telemetry_1['Distance'], telemetry_1['Speed'], label=driver_1, color = color_1)
+axes[0].plot(telemetry_2['Distance'], telemetry_2['Speed'], label=driver_2, color = color_2)
+axes[0].set_ylabel('Speed (km/h)')
+axes[0].legend()
+axes[0].set_title(f'Telemetry Comparison — {driver_1} vs {driver_2} Fastest Laps — {session.event["EventName"]} {session.event.year}')
+
+axes[1].plot(telemetry_1['Distance'], telemetry_1['Throttle'], label=driver_1, color = color_1)
+axes[1].plot(telemetry_2['Distance'], telemetry_2['Throttle'], label=driver_2, color = color_2)
+axes[1].set_ylabel('Throttle (%)')
+
+axes[2].plot(telemetry_1['Distance'], telemetry_1['Brake'], label=driver_1, color = color_1)
+axes[2].plot(telemetry_2['Distance'], telemetry_2['Brake'], label=driver_2, color = color_2)
+axes[2].set_ylabel('Brake')
+axes[2].set_xlabel('Distance around lap (m)')
+
+plt.tight_layout()
+plt.savefig('telemetry_overlay.png', dpi=200)
+plt.show()
+
+# --- 6. Print fastest lap times for reference ---
+print(f"{driver_1} fastest lap: {fastest_lap_1['LapTime']}")
+print(f"{driver_2} fastest lap: {fastest_lap_2['LapTime']}")
+print("Look at where the Speed lines diverge most — that's where one driver gained time.")
